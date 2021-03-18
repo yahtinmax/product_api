@@ -13,10 +13,6 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/', (req, res) => {
-  res.send('index.html');
-});
-
 app.use('/products', router.product);
 
 //404 catch
