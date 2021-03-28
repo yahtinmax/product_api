@@ -15,11 +15,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/products', router.product);
 
-//404 catch
+app.use((error, req, res, next) => {
+  res.status(error.output ? error.output.statusCode || 500 : 500).json({
+    error: error.output ? error.output.payload.message : 'Inernal server error',
+    data: null,
+  });
+});
+
 app.use((req, res) => {
   res
     .status(404)
-    .json({ error: '404. Sorry we can find this route. Try again' });
+    .json({ error: '404. Sorry we cant find this route. Try again' });
 });
 
 app.listen(PORT, () => {

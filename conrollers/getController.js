@@ -1,66 +1,39 @@
 const models = require('../models');
+const boom = require('boom');
 
 module.exports = {
-  getAllProducts: (req, res) => {
-    const perPage = req.query.perPage || process.env.PER_PAGE;
-    const page = req.query.page || 1;
-
+  getAllProducts: async (page, perPage) => {
     if (isNaN(perPage) || isNaN(page)) {
-      res.status(400).json({
-        error: 'Incorrect type of input data',
-      });
+      throw boom.badRequest('Incorrect type of input data');
     } else {
-      models.Product.find({})
+      const result = await models.Product.find({})
         .skip(+perPage * +page - +perPage)
         .limit(+perPage)
-        .then((products) => res.status(200).json(products))
         .catch((err) => {
-          res.status(500).json({
-            error: 'Internal server error',
-          });
+          throw boom.badImplementation(err);
         });
+      return result;
     }
   },
 
-  getOneProduct: (req, res) => {
-    const id = req.params.id;
-
-    models.Product.findById(id)
-      .then((product) => {
-        !product
-          ? res.status(404).json({
-              error: 'Product with this ObjectId is not found',
-            })
-          : res.status(200).json({
-              product,
-            });
-      })
-      .catch((err) => {
-        res.status(400).json({
-          error: 'Not valid ObjectId',
-        });
-      });
+  getOneProduct: async (id) => {
+    const result = await models.Product.findById(id).catch((err) => {
+      throw boom.badRequest('Not valid ObjectId');
+    });
+    if (!result)
+      throw boom.badRequest('Product with this ObjectId is not found');
+    else return result;
   },
 
   //Если Имя не передается, ищем возвращаем результат по любому наименованию
-  searchProducts: (req, res) => {
-    const name = req.query.name || '';
-    const price = req.query.price || 1000000000000;
-
-    models.Product.find({
+  searchProducts: async (name, price) => {
+    const result = await models.Product.find({
       name: { $regex: `${name}` },
       price: { $lte: +price },
       amount: { $gt: 0 },
-    })
-      .then((products) => {
-        res.status(200).json({
-          products,
-        });
-      })
-      .catch((err) => {
-        res.status(400).json({
-          error: 'Incorrect type of input data',
-        });
-      });
+    }).catch((err) => {
+      throw boom.badRequest('Incorrect type of input data');
+    });
+    return result;
   },
 };
